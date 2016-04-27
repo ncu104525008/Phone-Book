@@ -1,6 +1,8 @@
 package com.example.sango.ghw4;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -12,9 +14,15 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
     private ListView listView;
-    private String[] list = {"鉛筆","原子筆","鋼筆","毛筆","彩色筆"};
+    private SQLiteDatabase db;
+    private List<PhoneCard> phones;
+    private String[] list;
     private ArrayAdapter<String> listAdapter;
 
     @Override
@@ -24,9 +32,12 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        phones = new ArrayList<>();
+        db = MyDBHelper.getDatabase(MainActivity.this);
+
         listView = (ListView)findViewById(R.id.listView);
-        listAdapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1,list);
-        listView.setAdapter(listAdapter);
+
+        showPhones();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -59,5 +70,36 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showPhones() {
+        phones.clear();
+        String where = MyDBHelper.STATUS_COLUMN + "=" + 0;
+        Cursor cursor = db.query(MyDBHelper.TABLE_NAME, null, where, null, null, null, null, null);
+
+        while (cursor.moveToNext()) {
+            int id = cursor.getInt(0);
+            String name = cursor.getString(1);
+            String phone = cursor.getString(2);
+            int status = cursor.getInt(3);
+
+            PhoneCard card = new PhoneCard(id, name, phone, status);
+            phones.add(card);
+        }
+
+        list = getCardList();
+        listAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, list);
+        listView.setAdapter(listAdapter);
+    }
+
+    private String[] getCardList() {
+        int size = phones.size();
+        String[] cardList;
+        cardList = new String[size];
+        for(int i=0;i<size;i++) {
+            cardList[i] = phones.get(i).getName();
+        }
+
+        return cardList;
     }
 }
